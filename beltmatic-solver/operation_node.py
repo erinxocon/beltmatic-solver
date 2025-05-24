@@ -37,9 +37,9 @@ class OperationNode:
 
     def __divmod__(self, a: int, /) -> list["OperationNode"]:
         q, r = divmod(self.total_value, a)
-        results = [OperationNode(q, op=f"/{a}", prev=self)]
+        results = [OperationNode(q, op=f"/ {a}", prev=self)]
         if r != 0:
-            results.append(OperationNode(r, op=f"%{a}", prev=self))
+            results.append(OperationNode(r, op=f"% {a}", prev=self))
         return results
 
     def __hash__(self):

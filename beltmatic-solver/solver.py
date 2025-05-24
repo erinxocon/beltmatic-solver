@@ -1,14 +1,20 @@
+import heapq
 import timeit
-from collections import deque
-
 from operator import add, mul
 from operator import pow as _pow
 from operator import sub
+from typing import Callable, Literal, TypeAlias, TypeVar
 
-import heapq
-from .operation_node import OperationNode
+from operation_node import OperationNode
 
-OPERATOR_MAP = {
+OperatorStr: TypeAlias = (
+    Literal["+"] | Literal["-"] | Literal["*"] | Literal["/"] | Literal["**"]
+)
+
+T = TypeVar("T")
+ArithmeticCallable: TypeAlias = Callable[[T, T], T]
+
+OPERATOR_MAP: dict[OperatorStr, ArithmeticCallable] = {
     "+": add,
     "-": sub,
     "*": mul,
@@ -17,17 +23,28 @@ OPERATOR_MAP = {
 }
 
 
-def apply_op(current: "OperationNode", operand: int, op: str) -> list["OperationNode"]:
-    # no negative exponents for now
-    if op == "**" and operand < 0:
-        raise ValueError("No negative operators please!")
+def apply_op(
+    current: "OperationNode", operand: int, op: OperatorStr
+) -> list["OperationNode"]:
+
+    # no negative exponents for now, nothing above 10 or the numbers/search space gets unnessasarily large
+    if op == "**" and (operand < 0 or operand > 11):
+        return []
+
+    # if op == "**" and (current.total_value < 0) and operand % 2 == 1:
+    #     return []
+
     # Do not divide by zero, the computer will blow up
     if op == "/" and operand == 0:
-        raise ZeroDivisionError
+        return []
 
-    # # Avoid duplicates due to communitivity
-    # if op in {"+", "*"} and current.total_value > operand:
-    #     return []
+    # Skip redundant 0 for + and -
+    if op in {"+", "-"} and operand == 0:
+        return []
+
+    # Skip redundant 1 for * and /
+    if op in {"*", "/"} and operand == 1:
+        return []
 
     try:
         return OPERATOR_MAP[op](current, operand)
@@ -36,57 +53,16 @@ def apply_op(current: "OperationNode", operand: int, op: str) -> list["Operation
         return []
 
 
-def bfs_solve(
-    target: int,
-    start_numbers: list[int],
-    allowed_ops: list[str] = ["+", "-", "*", "**", "/"],
-) -> OperationNode | None:
-    visited = dict()
-    queue: deque[OperationNode] = deque()
-
-    # Initialize with each starting number as its own node
-    for num in start_numbers:
-        node = OperationNode(total_value=num)
-        queue.append(node)
-        visited[node.total_value] = node.node_id
-
-        if num == target:
-            return node
-
-    while queue:
-        current = queue.popleft()
-
-        # Success!
-        if current.total_value == target:
-            return current
-
-        # Try every operation with every allowed operand
-        for op in allowed_ops:
-            for operand in start_numbers:
-                try:
-                    results = apply_op(current=current, operand=operand, op=op)
-                except (ZeroDivisionError, OverflowError, ValueError):
-                    continue
-                else:
-                    for node in results:
-                        if (
-                            node.total_value not in visited
-                            or node.node_id < visited[node.total_value]
-                        ):
-                            visited[node.total_value] = node.node_id
-                            queue.append(node)
-
-    # If target not found
-    return None
-
-
 def heapq_solve(
     target: int,
     start_numbers: list[int],
-    allowed_ops: list[str] = ["+", "-", "*", "**", "/"],
+    allowed_ops: set[OperatorStr] | None = None,
 ) -> OperationNode | None:
-    visited = dict()
-    heap = []
+    if not allowed_ops:
+        allowed_ops = {"+", "-", "*", "/", "**"}
+
+    visited: dict[int, int] = dict()
+    heap: list[tuple[int, OperationNode]] = []
 
     # Initialize with each starting number as its own node
     for num in start_numbers:
@@ -98,7 +74,6 @@ def heapq_solve(
 
     while heap:
         cost, current = heapq.heappop(heap)
-        # print(f"Heap pop: {current} (steps={current.node_id})")
 
         if current.total_value == target:
             return current
@@ -111,6 +86,8 @@ def heapq_solve(
                     continue
                 else:
                     for node in results:
+                        if not (-3 * target <= node.total_value <= 3 * target):
+                            continue
                         if (
                             node.total_value not in visited
                             or node.node_id < visited[node.total_value]
@@ -165,28 +142,22 @@ start_numbers = list(
 )
 target = 4795
 
-
-def solve1():
-    result_node = bfs_solve(target, start_numbers, allowed_ops=["+", "*", "/"])
-    if result_node:
-        print("Solution:", result_node)
-        print("Steps:", result_node.node_id)
-    else:
-        print("No solution found.")
+# start_numbers = [1, 2, 3, 5]
+# target = 13
 
 
 def solve2():
-    result_node = heapq_solve(target, start_numbers, allowed_ops=["+", "*", "/"])
+    result_node = heapq_solve(
+        target,
+        start_numbers,
+        allowed_ops={"*", "+", "-", "/"},
+    )
     if result_node:
         print("Solution:", result_node)
         print("Steps:", result_node.node_id)
     else:
         print("No solution found.")
 
-
-# Now time it:
-elapsed = timeit.timeit(solve1, number=1)
-print(f"Elapsed time BFS: {elapsed:.6f} seconds")
 
 elapsed = timeit.timeit(solve2, number=1)
 print(f"Elapsed time heapq: {elapsed:.6f} seconds")
