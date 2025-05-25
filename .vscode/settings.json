@@ -1,0 +1,9 @@
+{
+    "[python]": {
+        "editor.formatOnSave": true,
+    },
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.typeEvaluation.deprecateTypingAliases": true,
+    "black-formatter.importStrategy": "fromEnvironment",
+    "black-formatter.cwd": "${workspaceFolder}"
+}
