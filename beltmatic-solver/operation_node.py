@@ -4,7 +4,7 @@ from typing import Any
 
 @total_ordering
 class OperationNode:
-    __slots__ = ("total_value", "op", "prev", "node_id")
+    __slots__: tuple[str, ...] = ("total_value", "op", "prev", "node_id")
 
     def __init__(
         self,
@@ -18,9 +18,7 @@ class OperationNode:
         self.op = op
         self.prev = prev
         self.node_id = (
-            node_id
-            if node_id is not None
-            else (prev.node_id + 1 if prev is not None else 0)
+            node_id if node_id is not None else (prev.node_id + 1 if prev is not None else 0)
         )
 
     def __add__(self, a: int, /) -> list["OperationNode"]:
