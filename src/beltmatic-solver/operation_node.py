@@ -58,7 +58,7 @@ class OperationNode:
         )
 
     def __str__(self) -> str:
-        steps = []
+        steps: list[str] = []
         node = self
         while node:
             if node.op:

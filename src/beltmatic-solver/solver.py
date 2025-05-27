@@ -139,8 +139,8 @@ if __name__ == "__main__":
     )
     target = 4795
 
-    start_numbers = [1, 2, 3, 5]
-    target = 13
+    # start_numbers = [1, 2, 3, 5]
+    # target = 13
 
     def solve2() -> None:
         result_node: OperationNode | None = heapq_solve(
